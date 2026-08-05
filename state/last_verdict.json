@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-05T01:12:11+00:00",
+  "generated": "2026-08-05T01:25:33+00:00",
   "subject": "/Users/kodywildfeuer/rapp-sentinel",
   "status": "degraded",
   "by_twin": {
@@ -55,19 +55,19 @@
       "id": "l_verdict_backed",
       "ok": true,
       "severity": "warn",
-      "detail": "verdict 'healthy' is 1m old"
+      "detail": "verdict 'healthy' is 15m old"
     },
     {
       "id": "c_coverage",
       "ok": false,
       "severity": "warn",
-      "detail": "watches 2/11 expected; uncovered: openrappter, public-art-collective, rapp-1, rapp-egg-hub, rapp-local-install, rapp-map, rapp-moment, rapp-sentinel, rapp-spine"
+      "detail": "declared but never referenced by any check: openrappter, public-art-collective, rapp-1, rapp-egg-hub, rapp-local-install, rapp-map, rapp-moment, rapp-sentinel, rapp-spine"
     },
     {
       "id": "c_config_agrees",
       "ok": true,
       "severity": "warn",
-      "detail": "both declarations list the same 2 repositories"
+      "detail": "both declarations list the same 11 repositories"
     },
     {
       "id": "c_boundaries_intact",
@@ -79,25 +79,25 @@
       "id": "c_direction_fresh",
       "ok": true,
       "severity": "warn",
-      "detail": "direction updated 0.4d ago"
+      "detail": "direction updated 0.0d ago"
     },
     {
       "id": "p_tick_fresh",
       "ok": true,
       "severity": "warn",
-      "detail": "last tick 1m ago"
+      "detail": "last tick 15m ago"
     },
     {
       "id": "p_green_streak",
       "ok": true,
       "severity": "warn",
-      "detail": "4 consecutive healthy (limit 96)"
+      "detail": "5 consecutive healthy (limit 96)"
     },
     {
       "id": "p_checks_nonvacuous",
       "ok": true,
       "severity": "warn",
-      "detail": "all 15 known checks still run (+2 new)"
+      "detail": "all 17 known checks still run"
     },
     {
       "id": "p_daemons_loaded",
@@ -110,5 +110,5 @@
     "c_coverage"
   ],
   "critical": [],
-  "summary": "c_coverage: watches 2/11 expected; uncovered: openrappter, public-art-collective, rapp-1, rapp-egg-hub, rapp-local-install, rapp-map, rapp-moment, rapp-sentinel, rapp-spine"
+  "summary": "c_coverage: declared but never referenced by any check: openrappter, public-art-collective, rapp-1, rapp-egg-hub, rapp-local-install, rapp-map, rapp-moment, rapp-sentinel, rapp-spine"
 }

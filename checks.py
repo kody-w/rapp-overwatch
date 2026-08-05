@@ -173,18 +173,30 @@ def l_verdict_backed():
 
 # ── compass: does its declared goal still match the world? ───────────────────
 
-def _repos_referenced_by_checks() -> set:
-    """Which repositories the subject's checks actually mention.
+def _repos_actually_examined():
+    """Which repositories the subject really looked at, and how we know.
 
-    Declared scope and real scope are different things. `cares_about` is
-    consumed by no code at all, and `watch_repos` only by the dashboard - the
-    checks themselves are pinned to two module constants. So a repository can
-    be added to the declared list and changed nothing whatsoever.
+    Returns (repos, how, age_minutes). `how` is "receipt" or "source".
+
+    The first version grepped the subject's checks.py for repository literals.
+    That worked only while its watch list was hardcoded. The moment the sweep
+    started reading `cares_about` at RUNTIME -- which is the better design, and
+    the one this guard was written to encourage -- every swept repository became
+    invisible to the grep and this reported nine false positives.
+
+    A guard that cries wolf is worse than no guard, because it teaches you to
+    scroll past it. So coverage is read from the receipt the sweep writes about
+    what it examined: evidence of behaviour rather than inference from text.
+    Source literals remain the fallback for a subject that writes no receipt.
     """
+    receipt, err = _load(subject_root() / "state" / "coverage.json")
+    if not err and isinstance(receipt, dict) and receipt.get("examined"):
+        return set(receipt["examined"]), "receipt", _age_minutes(receipt.get("at"))
     cf = subject_root() / "checks.py"
     if not cf.is_file():
-        return set()
-    return set(re.findall(r"[\"']([\w.-]+/[\w.-]+)[\"']", cf.read_text(encoding="utf-8")))
+        return set(), "source", None
+    return (set(re.findall(r"[\"']([\w.-]+/[\w.-]+)[\"']", cf.read_text(encoding="utf-8"))),
+            "source", None)
 
 
 def c_coverage():
@@ -204,8 +216,8 @@ def c_coverage():
     if not watched:
         return fail("c_coverage", "subject declares no repositories at all", critical=True)
 
-    referenced = _repos_referenced_by_checks()
-    declared_only = sorted(watched - referenced) if referenced else []
+    examined, how, age = _repos_actually_examined()
+    declared_only = sorted(watched - examined) if examined else []
     missing = sorted(expected - watched)
 
     problems = []
@@ -213,13 +225,17 @@ def c_coverage():
         problems.append(f"watches {len(watched)}/{len(expected)} expected; uncovered: "
                         + ", ".join(r.split("/")[-1] for r in missing))
     if declared_only:
-        problems.append("declared but never referenced by any check: "
+        problems.append("declared but never examined: "
                         + ", ".join(r.split("/")[-1] for r in declared_only))
+    # A receipt proves what happened once. Stale, it proves only that it once
+    # happened, which is not the question.
+    if how == "receipt" and age is not None and age > 24 * 60:
+        problems.append(f"coverage receipt is {age/60:.0f}h old")
     if problems:
         return fail("c_coverage", "; ".join(problems))
     return ok("c_coverage",
-              f"all {len(expected)} expected repositories declared, and every "
-              f"declared repository is referenced by a check")
+              f"all {len(expected)} expected declared, and all {len(examined)} "
+              f"examined (via {how})")
 
 
 def c_config_agrees():
