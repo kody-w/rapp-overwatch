@@ -180,10 +180,25 @@ def _rewind_report(anchor_file, current_heads):
         truncated = cur["seq"] < witnessed.get("seq", -1)
         rewritten = (cur["seq"] == witnessed.get("seq")
                      and cur.get("frame_hash") != witnessed.get("frame_hash"))
+        # An interior frame can move without disturbing the head at all. `prev`
+        # binds the predecessor's payload_hash, which covers the payload only;
+        # utc is covered by frame_hash, and frame_hash is never linked forward
+        # because prev_wave must be null off-swarm. So a timestamp can be
+        # rewritten inside its monotonic window, resealed, and the chain still
+        # verifies from genesis with the head byte-identical.
+        #
+        # We were already recording the digest over every frame_hash and never
+        # reading it. Reported separately from `rewritten` because it is a
+        # different claim: the head is honest and the history behind it is not.
+        wd, cd = witnessed.get("chain_digest"), cur.get("chain_digest")
+        revised = bool(wd and cd and not truncated and not rewritten
+                       and cur["seq"] == witnessed.get("seq") and wd != cd)
         out[slug] = {"witnessed_seq": witnessed.get("seq"), "current_seq": cur["seq"],
-                     "truncated": truncated, "rewritten": rewritten,
+                     "truncated": truncated, "rewritten": rewritten, "revised": revised,
                      "detail": ("head went backwards" if truncated else
-                                "same seq, different frame_hash" if rewritten else "ok")}
+                                "same seq, different frame_hash" if rewritten else
+                                "same head, different chain_digest: an interior frame moved"
+                                if revised else "ok")}
     return out
 
 
@@ -268,7 +283,7 @@ def witness_subject(subject_root: Path):
 def subject_rewind(subject_root: Path):
     """Has the subject's history moved under us since we first witnessed it?"""
     heads = {s: h for s, h in subject_heads(subject_root).items() if "seq" in h}
-    return _rewind_report(SUBJECT_ANCHORS, heads)
+    return _rewind_report(SUBJECT_ANCHORS, heads)   # subject_heads already carries chain_digest
 
 
 def roll_call(stale_minutes=180):

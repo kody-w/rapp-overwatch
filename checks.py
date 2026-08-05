@@ -115,7 +115,8 @@ def l_no_rewind():
     if not rep:
         return ok("l_no_rewind", "no prior witness yet (first run)")
     bad = [f"{s}: {v['detail']} (witnessed {v['witnessed_seq']}, now {v['current_seq']})"
-           for s, v in rep.items() if v.get("truncated") or v.get("rewritten")]
+           for s, v in rep.items()
+           if v.get("truncated") or v.get("rewritten") or v.get("revised")]
     if bad:
         return fail("l_no_rewind", "; ".join(bad), critical=True)
     return ok("l_no_rewind", f"{len(rep)} chains match every head we witnessed")

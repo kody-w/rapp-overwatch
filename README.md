@@ -37,6 +37,33 @@ They are separate because the failure modes are genuinely unrelated, and one che
 | **compass** | does its declared goal still match the world? | scope that narrowed without a decision; a deleted boundary; two config files disagreeing |
 | **pulse** | is work still moving? | a stopped loop; permanent green; a check that silently stopped being registered |
 
+## The head can be honest while the history is not
+
+`rapp/1` links frames by `prev`, which binds the predecessor's **`payload_hash`** — the
+payload only. `utc` is covered by `frame_hash`, and `frame_hash` is never linked forward,
+because the field that would carry it must be null off-swarm.
+
+So an interior timestamp can be rewritten *inside its monotonic window*, resealed, and the
+chain still verifies from genesis with the head byte-identical:
+
+```
+frame1 utc       01:00:00.000Z -> 01:59:59.000Z
+honest chain     4 frames verified from genesis
+forged chain     4 frames verified from genesis
+head frame_hash  unchanged
+head seq         unchanged
+chain_digest     DIFFERENT
+```
+
+We were recording that digest on every tick and reading it on none. Now it is compared,
+and reported as its own condition — `revised` — because "the head moved" and "the head is
+honest and the history behind it is not" are different claims.
+
+Staying inside the monotonic window is the whole point of the reproduction. Pushing a
+timestamp past its successor trips an ordering rule and proves nothing — the mistake
+recorded in rapp-sentinel's README, where a real finding was nearly dismissed by a
+badly-built test.
+
 ## The one thing the subject cannot do for itself
 
 The sentinel anchors its chain heads to an append-only witness — good practice, and it caught real truncation. But **that witness lives inside the directory whose integrity it attests.** Anything able to rewrite a chain is able to rewrite the file that would expose it.
@@ -56,7 +83,7 @@ $ python3 prove.py
   [FIRES] l_selfreport_agrees  when: subject is truncated but reports truncated=false
           said: brainstem: subject says truncated=False, we measured True
   ...
-  14/14 guards proven to fire and then go quiet
+  15/15 guards proven to fire and then go quiet
 ```
 
 Each scenario slips a **throwaway copy** of the subject and asserts the matching check fails, then asserts the same check passes on a clean copy. Both halves matter: a check that fails on everything is as useless as one that fails on nothing, and only the pair tells them apart.
