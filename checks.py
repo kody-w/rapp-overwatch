@@ -417,10 +417,51 @@ def p_daemons_loaded():
     return ok("p_daemons_loaded", f"{len(want)} launchd jobs loaded, last exit clean")
 
 
+def p_self_checks_complete():
+    """Require our own checks, rather than enumerating whatever survived.
+
+    BY_TWIN is a dict literal, so deleting a name removes a check and the tick
+    reports one fewer entry -- no failure, no signal, and nothing compares the
+    count. This is the same hole this repository diagnosed in rapp-sentinel and
+    that it closed with required_checks.json. The watcher that found it kept it.
+
+    prove.py does not cover this: it proves each guard FIRES, not that it RUNS.
+    A check deleted from BY_TWIN but left defined still has a passing scenario,
+    because the harness calls checks.<name>() directly.
+
+    Extras are reported and never failed -- a new check should not break the
+    loop before someone lists it.
+
+    Honest limit, the same one rapp-sentinel's w_checks_complete carries: this
+    cannot detect its own removal. That is what rapp-ratchet is for.
+    """
+    registered = {fn.__name__ for fns in BY_TWIN.values() for fn in fns}
+    manifest = HOME / "required_checks.json"
+    if not manifest.is_file():
+        return fail("p_self_checks_complete", "required_checks.json is missing", critical=True)
+    try:
+        required = set(json.loads(manifest.read_text(encoding="utf-8"))["required"])
+    except Exception as exc:
+        return fail("p_self_checks_complete",
+                    f"required_checks.json unreadable: {type(exc).__name__}: {exc}",
+                    critical=True)
+    missing = sorted(required - registered)
+    if missing:
+        return fail("p_self_checks_complete",
+                    f"{len(missing)} required check(s) not registered: " + ", ".join(missing),
+                    critical=True)
+    extra = sorted(registered - required)
+    detail = f"all {len(required)} required checks registered"
+    if extra:
+        detail += f"; {len(extra)} unlisted: {', '.join(extra)}"
+    return ok("p_self_checks_complete", detail)
+
+
 BY_TWIN = {
     "ledger":  [l_chains_verify, l_no_rewind, l_selfreport_agrees, l_verdict_backed],
     "compass": [c_coverage, c_config_agrees, c_boundaries_intact, c_direction_fresh],
-    "pulse":   [p_tick_fresh, p_green_streak, p_checks_nonvacuous, p_daemons_loaded],
+    "pulse":   [p_tick_fresh, p_green_streak, p_checks_nonvacuous, p_daemons_loaded,
+                p_self_checks_complete],
 }
 
 

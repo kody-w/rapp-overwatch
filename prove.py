@@ -33,9 +33,14 @@ REAL_SUBJECT = Path(os.path.expanduser("~/rapp-sentinel"))
 GREEN, RED, DIM, RESET = "\033[32m", "\033[31m", "\033[2m", "\033[0m"
 
 
-def run_check(name, subject, state, nbhd, direction=None):
+def run_check(name, subject, state, nbhd, direction=None, cwd=None):
     """Run ONE check in a subprocess with its own state, so scenarios cannot
-    contaminate each other through a shared baseline file."""
+    contaminate each other through a shared baseline file.
+
+    `cwd` lets a scenario run the check against a COPY of this repository. Guards
+    about our own registry cannot be proven from the live tree -- the check reads
+    the BY_TWIN it was imported with.
+    """
     env = dict(os.environ,
                OVERWATCH_SUBJECT_ROOT=str(subject),
                OVERWATCH_STATE=str(state),
@@ -43,7 +48,7 @@ def run_check(name, subject, state, nbhd, direction=None):
     if direction:
         env["OVERWATCH_DIRECTION"] = str(direction)
     code = (f"import json,checks; r=checks.{name}(); print(json.dumps(r))")
-    r = subprocess.run([sys.executable, "-c", code], cwd=HOME, env=env,
+    r = subprocess.run([sys.executable, "-c", code], cwd=str(cwd or HOME), env=env,
                        capture_output=True, text=True, timeout=120)
     if r.returncode != 0:
         return {"id": name, "ok": None, "detail": f"harness error: {r.stderr.strip()[-300:]}"}
@@ -218,6 +223,25 @@ def slip_declared_not_checked(subject, state, nbhd):
     _write(Path(state) / "direction.json", ow)
 
 
+def copy_self(state, deregister=False):
+    """A throwaway copy of THIS repository, optionally missing a check.
+
+    prove.py cannot otherwise see a deregistration: it calls checks.<name>()
+    directly, so a check deleted from BY_TWIN keeps a passing scenario while the
+    tick stops running it entirely.
+    """
+    ow = Path(state) / "self"
+    if ow.exists():
+        shutil.rmtree(ow)
+    shutil.copytree(HOME, ow, ignore=shutil.ignore_patterns(
+        "__pycache__", ".git", "logs", "neighborhood", "state"))
+    if deregister:
+        cf = ow / "checks.py"
+        cf.write_text(cf.read_text(encoding="utf-8").replace(
+            "p_daemons_loaded,\n", "", 1), encoding="utf-8")
+    return ow
+
+
 SCENARIOS = [
     ("l_chains_verify",     "an interior frame payload is rewritten",        slip_corrupt_frame, None),
     ("l_no_rewind",         "five frames are dropped after we witnessed them", slip_truncate, None),
@@ -232,6 +256,7 @@ SCENARIOS = [
     ("p_green_streak",      "200 consecutive healthy observations",          slip_endless_green, None),
     ("p_checks_nonvacuous", "three checks silently stop being registered",   slip_check_vanished, None),
     ("p_daemons_loaded",    "a watched launchd job is not loaded",           slip_daemon_missing, None),
+    ("p_self_checks_complete", "one of OUR OWN checks is deregistered",       copy_self, None),
 ]
 
 
@@ -253,14 +278,22 @@ def main():
             if prep:
                 prep(s, st, nb)
             cdj = Path(st) / "direction.json"
-            clean = run_check(name, s, st, nb, direction=cdj if cdj.exists() else None)
+            # A scenario whose slip function is copy_self is about OUR OWN
+            # registry, so the check has to be imported from a copied tree --
+            # running it here would read the live BY_TWIN and prove nothing.
+            self_scoped = slip is copy_self
+            clean = run_check(name, s, st, nb,
+                              direction=cdj if cdj.exists() else None,
+                              cwd=copy_self(st, deregister=False) if self_scoped else None)
 
             # 2. slipped copy: the same check must FAIL
             s2, st2, nb2 = fresh_copy(tmp, f"{tag}-slip")
-            slip(s2, st2, nb2)
+            if not self_scoped:
+                slip(s2, st2, nb2)
             dj = Path(st2) / "direction.json"
             slipped = run_check(name, s2, st2, nb2,
-                                direction=dj if dj.exists() else None)
+                                direction=dj if dj.exists() else None,
+                                cwd=copy_self(st2, deregister=True) if self_scoped else None)
 
             good = clean.get("ok") is True and slipped.get("ok") is False
             passed, failed = (passed + 1, failed) if good else (passed, failed + 1)
