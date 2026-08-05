@@ -117,6 +117,40 @@ def slip_truncate(subject, state, nbhd):
     cf.write_text("\n".join(lines[:-5]) + "\n", encoding="utf-8")
 
 
+def slip_utc_rewrite(subject, state, nbhd):
+    """Move an interior frame's utc INSIDE its monotonic window, then reseal.
+
+    prev binds the predecessor's payload_hash, which covers the payload only.
+    utc is covered by frame_hash, and frame_hash is never linked forward because
+    prev_wave must be null off-swarm. So the chain still verifies from genesis
+    and the head is byte-identical -- only the digest over every frame_hash
+    moves, which is the thing we record and were not reading.
+
+    Staying inside the monotonic window is the whole point. Pushing the
+    timestamp past its successor trips the ordering rule at 7.5 step 4 and
+    proves nothing -- the mistake recorded in rapp-sentinel's README, where a
+    real finding was nearly dismissed by a badly-built test.
+    """
+    import rapp as _rapp
+    _witness(subject, state, nbhd)          # witness the honest chain first
+    cf = _first_chain(subject)
+    lines = cf.read_text(encoding="utf-8").splitlines()
+    i = len(lines) // 2
+    frame = json.loads(lines[i])
+    prev_utc = json.loads(lines[i - 1])["utc"]
+    next_utc = json.loads(lines[i + 1])["utc"]
+    # strictly between its neighbours: a real lie about when, that ordering allows
+    if not (prev_utc < frame["utc"] < next_utc):
+        frame["utc"] = next_utc            # degenerate spacing; still <= successor
+    else:
+        frame["utc"] = next_utc[:-5] + "0.000Z" if next_utc[:-5] > frame["utc"][:-5] \
+            else frame["utc"][:-5] + "9.999Z"
+    pre = {k: frame[k] for k in frame if k not in ("frame_hash", "sig")}
+    frame["frame_hash"] = _rapp.H("rapp/1:wave", pre)
+    lines[i] = json.dumps(frame)
+    cf.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def slip_truncate_and_deny(subject, state, nbhd):
     slip_truncate(subject, state, nbhd)
     anchors = subject / "state" / "anchors.json"
@@ -245,6 +279,7 @@ def copy_self(state, deregister=False):
 SCENARIOS = [
     ("l_chains_verify",     "an interior frame payload is rewritten",        slip_corrupt_frame, None),
     ("l_no_rewind",         "five frames are dropped after we witnessed them", slip_truncate, None),
+    ("l_no_rewind",         "an interior frame's utc is rewritten and resealed", slip_utc_rewrite, None),
     ("l_selfreport_agrees", "subject is truncated but reports truncated=false", slip_truncate_and_deny, None),
     ("l_verdict_backed",    "'healthy' served from a 12h-old verdict",       slip_stale_healthy_verdict, None),
     ("c_coverage",          "declared scope narrows to one repository",      slip_narrow_scope, prep_coverage),
