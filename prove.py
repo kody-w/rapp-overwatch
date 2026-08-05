@@ -198,12 +198,33 @@ def slip_daemon_missing(subject, state, nbhd):
     _write(Path(state) / "direction.json", d)
 
 
+def prep_declared_only(subject, state, nbhd):
+    """Expect exactly what the subject declares, so only the cheat can fire."""
+    _coverage_direction(subject, state)
+
+
+def slip_declared_not_checked(subject, state, nbhd):
+    """The cheat this guard exists to refuse: satisfy coverage by editing a list.
+
+    cares_about is read by no code and watch_repos only by the dashboard, so
+    appending a name widens the DECLARATION and watches nothing. An earlier
+    version of c_coverage compared two lists and would have gone green here.
+    """
+    d = _read(subject / "direction.json")
+    d["cares_about"] = list(d.get("cares_about") or []) + ["kody-w/not-actually-watched"]
+    _write(subject / "direction.json", d)
+    ow = _read(HOME / "direction.json")
+    ow["expected_coverage"] = list(d["cares_about"])   # expectation satisfied on paper
+    _write(Path(state) / "direction.json", ow)
+
+
 SCENARIOS = [
     ("l_chains_verify",     "an interior frame payload is rewritten",        slip_corrupt_frame, None),
     ("l_no_rewind",         "five frames are dropped after we witnessed them", slip_truncate, None),
     ("l_selfreport_agrees", "subject is truncated but reports truncated=false", slip_truncate_and_deny, None),
     ("l_verdict_backed",    "'healthy' served from a 12h-old verdict",       slip_stale_healthy_verdict, None),
     ("c_coverage",          "declared scope narrows to one repository",      slip_narrow_scope, prep_coverage),
+    ("c_coverage",          "scope is widened by declaration only, no check", slip_declared_not_checked, prep_declared_only),
     ("c_config_agrees",     "config.watch_repos drifts from direction",      slip_config_disagrees, None),
     ("c_boundaries_intact", "a boundary is quietly deleted",                 slip_drop_boundary, None),
     ("c_direction_fresh",   "direction untouched for 90 days",               slip_stale_direction, None),
@@ -222,16 +243,20 @@ def main():
     print(f"prove.py — every guard must be seen firing\n{'=' * 74}")
     passed = failed = 0
     with tempfile.TemporaryDirectory(prefix="overwatch-prove-") as tmp:
-        for name, desc, slip, prep in SCENARIOS:
+        for i, (name, desc, slip, prep) in enumerate(SCENARIOS):
+            # Tag by index, not by check name: one check can own several
+            # scenarios (c_coverage has two -- narrowed, and widened by
+            # declaration only) and name-based temp dirs collided.
+            tag = f"{i:02d}-{name}"
             # 1. clean copy: the check must PASS, or the scenario proves nothing
-            s, st, nb = fresh_copy(tmp, f"{name}-clean")
+            s, st, nb = fresh_copy(tmp, f"{tag}-clean")
             if prep:
                 prep(s, st, nb)
             cdj = Path(st) / "direction.json"
             clean = run_check(name, s, st, nb, direction=cdj if cdj.exists() else None)
 
             # 2. slipped copy: the same check must FAIL
-            s2, st2, nb2 = fresh_copy(tmp, f"{name}-slip")
+            s2, st2, nb2 = fresh_copy(tmp, f"{tag}-slip")
             slip(s2, st2, nb2)
             dj = Path(st2) / "direction.json"
             slipped = run_check(name, s2, st2, nb2,

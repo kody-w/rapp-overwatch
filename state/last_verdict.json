@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-05T00:42:11+00:00",
+  "generated": "2026-08-05T01:12:11+00:00",
   "subject": "/Users/kodywildfeuer/rapp-sentinel",
   "status": "degraded",
   "by_twin": {
@@ -37,7 +37,7 @@
       "id": "l_chains_verify",
       "ok": true,
       "severity": "warn",
-      "detail": "3 chains, 322 frames verified from genesis"
+      "detail": "3 chains, 328 frames verified from genesis"
     },
     {
       "id": "l_no_rewind",
@@ -55,7 +55,7 @@
       "id": "l_verdict_backed",
       "ok": true,
       "severity": "warn",
-      "detail": "verdict 'healthy' is 2m old"
+      "detail": "verdict 'healthy' is 1m old"
     },
     {
       "id": "c_coverage",
@@ -85,19 +85,19 @@
       "id": "p_tick_fresh",
       "ok": true,
       "severity": "warn",
-      "detail": "last tick 2m ago"
+      "detail": "last tick 1m ago"
     },
     {
       "id": "p_green_streak",
       "ok": true,
       "severity": "warn",
-      "detail": "3 consecutive healthy (limit 96)"
+      "detail": "4 consecutive healthy (limit 96)"
     },
     {
       "id": "p_checks_nonvacuous",
       "ok": true,
       "severity": "warn",
-      "detail": "all 15 known checks still run"
+      "detail": "all 15 known checks still run (+2 new)"
     },
     {
       "id": "p_daemons_loaded",

@@ -56,10 +56,25 @@ $ python3 prove.py
   [FIRES] l_selfreport_agrees  when: subject is truncated but reports truncated=false
           said: brainstem: subject says truncated=False, we measured True
   ...
-  12/12 guards proven to fire and then go quiet
+  13/13 guards proven to fire and then go quiet
 ```
 
 Each scenario slips a **throwaway copy** of the subject and asserts the matching check fails, then asserts the same check passes on a clean copy. Both halves matter: a check that fails on everything is as useless as one that fails on nothing, and only the pair tells them apart.
+
+`c_coverage` owns two scenarios, and the second is the important one. Its first
+version compared a declared list against an expected list — which made it
+satisfiable by **editing a list**. `cares_about` is read by no code at all and
+`watch_repos` only by the dashboard, so appending a name widens the declaration
+and watches nothing. The guard now also requires every declared repository to be
+referenced by an actual check, and the scenario proves the cheat is refused:
+
+```
+[FIRES] c_coverage
+        when: scope is widened by declaration only, no check
+        said: declared but never referenced by any check: not-actually-watched
+```
+
+A guard that a declaration can satisfy is a guard the declaration owns.
 
 This is not ceremony. `c_coverage` initially reported `BROKEN` here — not because the check was wrong, but because it already fails against the real sentinel, so "clean" was not clean and the scenario proved nothing. A guard nobody has watched fail is indistinguishable from a guard that cannot fail, which is the entire reason this repository exists.
 

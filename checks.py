@@ -173,21 +173,53 @@ def l_verdict_backed():
 
 # ── compass: does its declared goal still match the world? ───────────────────
 
+def _repos_referenced_by_checks() -> set:
+    """Which repositories the subject's checks actually mention.
+
+    Declared scope and real scope are different things. `cares_about` is
+    consumed by no code at all, and `watch_repos` only by the dashboard - the
+    checks themselves are pinned to two module constants. So a repository can
+    be added to the declared list and changed nothing whatsoever.
+    """
+    cf = subject_root() / "checks.py"
+    if not cf.is_file():
+        return set()
+    return set(re.findall(r"[\"']([\w.-]+/[\w.-]+)[\"']", cf.read_text(encoding="utf-8")))
+
+
 def c_coverage():
-    """What it says it watches, against what this ecosystem now contains."""
+    """Declared scope vs the ecosystem AND vs what the checks really touch.
+
+    The first version of this compared two lists, which made it satisfiable by
+    editing a list. That is the wrong shape for a check whose entire job is
+    catching scope that drifted from reality: it would have gone green the
+    moment a name was appended, while nothing new was being watched. A guard
+    that can be satisfied by a declaration is a guard the declaration owns.
+    """
     dj, err = _load(subject_root() / "direction.json")
     if err:
         return fail("c_coverage", f"subject direction.json {err}", critical=True)
     watched = set(dj.get("cares_about") or [])
     expected = set(direction().get("expected_coverage") or [])
-    missing = sorted(expected - watched)
     if not watched:
         return fail("c_coverage", "subject declares no repositories at all", critical=True)
+
+    referenced = _repos_referenced_by_checks()
+    declared_only = sorted(watched - referenced) if referenced else []
+    missing = sorted(expected - watched)
+
+    problems = []
     if missing:
-        return fail("c_coverage",
-                    f"watches {len(watched)}/{len(expected)} expected; "
-                    f"uncovered: {', '.join(r.split('/')[-1] for r in missing)}")
-    return ok("c_coverage", f"covers all {len(expected)} expected repositories")
+        problems.append(f"watches {len(watched)}/{len(expected)} expected; uncovered: "
+                        + ", ".join(r.split("/")[-1] for r in missing))
+    if declared_only:
+        problems.append("declared but never referenced by any check: "
+                        + ", ".join(r.split("/")[-1] for r in declared_only))
+    if problems:
+        return fail("c_coverage", "; ".join(problems))
+    return ok("c_coverage",
+              f"all {len(expected)} expected repositories declared, and every "
+              f"declared repository is referenced by a check")
 
 
 def c_config_agrees():

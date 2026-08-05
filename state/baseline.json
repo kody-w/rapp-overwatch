@@ -19,7 +19,9 @@
     "rv_validation",
     "rv_world_merging",
     "sites",
+    "w_anchor_ledger",
     "w_brainstem",
+    "w_checks_complete",
     "w_openrappter",
     "w_sentinel_fresh"
   ]
