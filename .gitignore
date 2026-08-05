@@ -1,3 +1,14 @@
 __pycache__/
 *.pyc
 logs/
+
+# Runtime output, written by the ticking process. Tracking these kept the live
+# working tree permanently dirty, so git pull could not fast-forward -- and the
+# obvious unblock (git checkout -- neighborhood) destroys the chains. That
+# already cost rapp-ratchet about six hours of frames. The chains are the
+# tamper-evident record: untracked, never deleted.
+state/
+neighborhood/anchors.jsonl
+neighborhood/subject-anchors.jsonl
+neighborhood/identities.json
+neighborhood/*/chain.jsonl
