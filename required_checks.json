@@ -1,0 +1,21 @@
+{
+  "_why": "BY_TWIN is a dict literal, so deleting a name removes a check and the tick simply reports one fewer entry - no failure, no signal. This repo diagnosed exactly that hole in rapp-sentinel and kept it. This file is the REQUIRED set; s_checks_complete compares it against what actually ran.",
+  "_note": "prove.py proves each guard FIRES, not that it RUNS. A check removed from BY_TWIN but still defined keeps a passing scenario, because the harness calls checks.<name>() directly.",
+  "_adding": "Add the id here in the same commit. Extras are reported without failing, so a new check never breaks the loop before someone lists it.",
+  "_removing": "Delete it here deliberately, in a commit that says why.",
+  "required": [
+    "c_boundaries_intact",
+    "c_config_agrees",
+    "c_coverage",
+    "c_direction_fresh",
+    "l_chains_verify",
+    "l_no_rewind",
+    "l_selfreport_agrees",
+    "l_verdict_backed",
+    "p_checks_nonvacuous",
+    "p_daemons_loaded",
+    "p_green_streak",
+    "p_self_checks_complete",
+    "p_tick_fresh"
+  ]
+}
