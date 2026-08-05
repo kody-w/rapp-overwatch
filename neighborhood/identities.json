@@ -1,0 +1,5 @@
+{
+  "ledger": "rappid:@kody-w/twin-ledger:bd583999b6d7d0e725ed8a089c4a8cf4448448a49daca3bbef189b493d89f605",
+  "compass": "rappid:@kody-w/twin-compass:6a34a385ebc4d763cca78c15cf81e2b6daa30fc6c40382c9015cc910a6cd3f2d",
+  "pulse": "rappid:@kody-w/twin-pulse:76fb02c6d9a9a10552b9833fb49c80b5f94ce8f6250282ba6bd4a07dec661a30"
+}

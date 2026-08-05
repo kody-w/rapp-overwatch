@@ -1,0 +1,39 @@
+{
+  "situation": "A watchdog (kody-w/rapp-sentinel) keeps two GitHub-native platforms alive overnight and has been genuinely effective: it found a replica-lag race nobody described to it, and one of its own watchers found a real limitation in the chain format it runs on. It is not suspected of anything. It is watched because a watchdog is exactly the component whose failure is silent by construction — when it stops noticing, the symptom is that everything looks fine.\n\nIts own history contains the shape twice already. A liveness probe attested 'alive' fourteen times without ever touching the endpoint whose job it was to check. A guardian exited 0 for five days while unauthenticated. Both reported green the entire time. The sentinel now checks both of those specific things about itself, which is precisely why the NEXT such gap will be somewhere it is not looking.\n\nThe scope it was given has also moved. Its direction names two repositories. The ecosystem it operates in now has more than twenty actively pushed, several of them load-bearing for the two it does watch. Coverage that was complete when written becomes partial without anyone deciding to narrow it, and nothing in the sentinel compares its declared scope to the world.\n\nI am usually asleep between midnight and eight.",
+  "boundaries": [
+    "Never write to the subject's directory. Read-only, always. A watcher that can edit its subject can edit the evidence.",
+    "Never restart, repair, reconfigure or escalate on the subject's behalf. Report; do not intervene.",
+    "Never trust the subject's report about itself where primary evidence exists. Verify chains from genesis; do not restate roll_call.json.",
+    "Never claim the subject is healthy from a check that cannot fail. Every check here must have been observed firing.",
+    "Never force-push or rewrite published history, including our own."
+  ],
+  "subject": "~/rapp-sentinel",
+  "launchd_labels": [
+    "com.rapp.neighborhood-watch",
+    "com.rapp.nightwatch"
+  ],
+  "expected_coverage": [
+    "kody-w/rappterverse",
+    "kody-w/rappterbook",
+    "kody-w/openrappter",
+    "kody-w/rapp-sentinel",
+    "kody-w/rapp-1",
+    "kody-w/rapp-map",
+    "kody-w/rapp-spine",
+    "kody-w/rapp-local-install",
+    "kody-w/rapp-egg-hub",
+    "kody-w/rapp-moment",
+    "kody-w/public-art-collective"
+  ],
+  "twins": {
+    "ledger": "are its claims backed by evidence we gathered ourselves?",
+    "compass": "does its declared goal still match the world it operates in?",
+    "pulse": "is work still moving, or has it settled into permanent green?"
+  },
+  "thresholds": {
+    "tick_stale_minutes": 90,
+    "green_streak_suspicious": 96,
+    "direction_stale_days": 14
+  },
+  "updated_at": "2026-08-05T00:40:00Z"
+}

@@ -1,0 +1,8 @@
+{
+  "subject_root": "~/rapp-sentinel",
+  "notify": true,
+  "notify_handle": "+14048628786",
+  "tick_interval_minutes": 30,
+  "report_only": true,
+  "never_write_to_subject": true
+}

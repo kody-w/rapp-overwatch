@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.rapp.overwatch</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__DIR__/run.sh</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>__HOME__</string>
+    <!-- Spelled out because launchd's session PATH is /usr/bin:/bin:/usr/sbin:/sbin
+         and contains no Homebrew. A job that finds its interpreter interactively
+         and not under launchd is the most common way one of these dies quietly. -->
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:__HOME__/.local/bin</string>
+  </dict>
+
+  <!-- Every 30 minutes: deliberately SLOWER than the sentinel's 15. Sampling a
+       watchdog faster than it ticks produces observations that say nothing new,
+       and the green-streak count then measures our own cadence rather than its
+       behaviour. -->
+  <key>StartInterval</key>
+  <integer>1800</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <!-- Deliberately NOT KeepAlive: a periodic task, not a daemon. KeepAlive
+       restarts it in a tight loop the moment a tick exits. -->
+  <key>StandardOutPath</key>
+  <string>__DIR__/logs/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__DIR__/logs/launchd.err.log</string>
+</dict>
+</plist>

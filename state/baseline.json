@@ -1,0 +1,26 @@
+{
+  "boundaries": [
+    "Never force-push or rewrite published history.",
+    "Never touch a repository not named in the situation.",
+    "Never exceed the daily budget, even to finish something already started.",
+    "Never claim a fix landed without re-probing to prove it."
+  ],
+  "recorded_utc": "2026-08-05T00:38:28+00:00",
+  "check_ids": [
+    "alert_delivery",
+    "channel",
+    "rb_content_moving",
+    "rb_json_parses",
+    "rb_public_surface",
+    "rb_shards",
+    "rb_wf_starved",
+    "rb_workflows",
+    "rv_pr_queue",
+    "rv_validation",
+    "rv_world_merging",
+    "sites",
+    "w_brainstem",
+    "w_openrappter",
+    "w_sentinel_fresh"
+  ]
+}
