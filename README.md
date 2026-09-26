@@ -1,5 +1,9 @@
 # rapp-overwatch
 
+<!-- rapp1:network-header:start -->
+[![RAPP/1](https://kody-w.github.io/rapp-hive-public/portfolio/badges/rapp-overwatch.svg)](https://github.com/kody-w/rapp-hive-public/blob/main/portfolio/repos/rapp-overwatch.md) · **New to RAPP?** [Start here: get your Brainstem →](https://github.com/kody-w/rapp-installer#start-here)
+<!-- rapp1:network-header:end -->
+
 **Three twins that watch a watchdog, from outside the directory it can write to.**
 
 The subject is [`kody-w/rapp-sentinel`](https://github.com/kody-w/rapp-sentinel), which keeps two GitHub-native platforms alive overnight. It is good at its job. That is exactly why it needs this.
